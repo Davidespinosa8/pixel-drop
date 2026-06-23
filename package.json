@@ -1,0 +1,9 @@
+{
+  "name": "pixel-drop",
+  "private": true,
+  "scripts": {
+    "dev:web": "cd frontend && npm run dev",
+    "lint:web": "cd frontend && npm run lint",
+    "build:web": "cd frontend && npm run build"
+  }
+}

@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg: #070817;
+  --color-panel: #11132B;
+  --color-panel-border: #1E2247;
+  --color-arcade-cyan: #45F3FF;
+  --color-arcade-magenta: #FF3CAC;
+  --color-arcade-violet: #8B5CF6;
+  --color-arcade-yellow: #FFE66D;
+  --color-arcade-green: #59F17F;
+  --color-arcade-red: #FF4D6D;
+  --color-text-primary: #EAF6FF;
+  --color-text-muted: #6B7DB3;
+  --color-text-disabled: #2E3560;
+}
+
+body {
+  background-color: #070817;
+  color: #EAF6FF;
+}
