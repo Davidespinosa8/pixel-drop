@@ -18,13 +18,14 @@ export function ArcadeButton({
   variant = "primary",
   loading = false,
   disabled,
+  type = "button",
   children,
   className = "",
   ...props
 }: ArcadeButtonProps) {
   return (
     <button
-      type="button"
+      type={type}
       disabled={disabled || loading}
       className={[
         "inline-flex items-center justify-center gap-2",

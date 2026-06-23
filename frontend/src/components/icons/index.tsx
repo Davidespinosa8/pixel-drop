@@ -115,6 +115,39 @@ export function SuccessIcon(props: IconProps) {
   );
 }
 
+/* Rocket — pixel cohete */
+export function RocketIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="7"  y="0"  width="2" height="2" />
+      <rect x="5"  y="2"  width="6" height="2" />
+      <rect x="4"  y="4"  width="8" height="4" />
+      <rect x="3"  y="8"  width="10" height="2" />
+      <rect x="2"  y="10" width="12" height="2" />
+      <rect x="1"  y="12" width="2" height="2" />
+      <rect x="13" y="12" width="2" height="2" />
+      <rect x="6"  y="12" width="4" height="2" />
+      <rect x="7"  y="14" width="2" height="2" />
+    </svg>
+  );
+}
+
+/* Logout — door with arrow */
+export function LogoutIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="0"  y="0"  width="8" height="2" />
+      <rect x="0"  y="14" width="8" height="2" />
+      <rect x="0"  y="2"  width="2" height="12" />
+      <rect x="10" y="4"  width="2" height="2" />
+      <rect x="12" y="6"  width="2" height="2" />
+      <rect x="8"  y="7"  width="6" height="2" />
+      <rect x="12" y="9"  width="2" height="2" />
+      <rect x="10" y="11" width="2" height="2" />
+    </svg>
+  );
+}
+
 /* Close — X mark */
 export function CloseIcon(props: IconProps) {
   return (
