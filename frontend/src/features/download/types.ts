@@ -7,14 +7,24 @@ export interface SelectedFormat {
   quality: VideoQuality | AudioFormat;
 }
 
+export interface VideoOption {
+  quality: VideoQuality;
+  height: number | null;
+  estimatedSizeBytes: number | null;
+}
+
+export interface AudioOption {
+  format: AudioFormat;
+  estimatedSizeBytes: number | null;
+}
+
 export interface MediaAnalysis {
-  url: string;
   title: string;
   channel: string;
   durationSeconds: number;
-  availableVideoQualities: VideoQuality[];
-  availableAudioFormats: AudioFormat[];
-  estimatedSizes: Record<string, string>;
+  thumbnailUrl: string | null;
+  videoOptions: VideoOption[];
+  audioOptions: AudioOption[];
 }
 
 export interface SimulatedFileInfo {
@@ -28,14 +38,28 @@ export type ErrorCode =
   | "INVALID_URL"
   | "FORBIDDEN_PROTOCOL"
   | "FORBIDDEN_DOMAIN"
-  | "ANALYSIS_FAILED";
+  | "ANALYSIS_FAILED"
+  | "DOMAIN_NOT_ALLOWED"
+  | "VIDEO_NOT_FOUND"
+  | "PRIVATE_VIDEO"
+  | "AUTHENTICATION_REQUIRED"
+  | "AGE_RESTRICTED"
+  | "LIVE_NOT_SUPPORTED"
+  | "PLAYLIST_NOT_SUPPORTED"
+  | "DURATION_LIMIT_EXCEEDED"
+  | "SIZE_LIMIT_EXCEEDED"
+  | "ANALYSIS_TIMEOUT"
+  | "YTDLP_ERROR"
+  | "SERVER_CONFIGURATION_ERROR"
+  | "TIMEOUT"
+  | "NETWORK_ERROR";
 
 export type DownloadStage = "preparing" | "downloading";
 
 export type UIState =
   | { phase: "idle" }
   | { phase: "scanning"; url: string }
-  | { phase: "ready"; analysis: MediaAnalysis; selectedFormat: SelectedFormat | null }
+  | { phase: "ready"; url: string; analysis: MediaAnalysis; selectedFormat: SelectedFormat | null }
   | {
       phase: "downloading";
       analysis: MediaAnalysis;

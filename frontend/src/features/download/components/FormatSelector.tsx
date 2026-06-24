@@ -2,6 +2,7 @@
 
 import type { MediaAnalysis, SelectedFormat, MediaType, VideoQuality, AudioFormat } from "../types";
 import { VIDEO_QUALITY_LABELS, AUDIO_FORMAT_LABELS } from "../constants";
+import { formatBytes } from "../validateUrl";
 import { VideoIcon, AudioIcon } from "@/components/icons";
 
 interface FormatSelectorProps {
@@ -15,9 +16,11 @@ export function FormatSelector({ analysis, selected, onChange }: FormatSelectorP
 
   function selectType(type: MediaType) {
     if (type === "video") {
-      onChange({ type: "video", quality: analysis.availableVideoQualities[0] });
+      const first = analysis.videoOptions[0];
+      if (first) onChange({ type: "video", quality: first.quality });
     } else {
-      onChange({ type: "audio", quality: analysis.availableAudioFormats[0] });
+      const first = analysis.audioOptions[0];
+      if (first) onChange({ type: "audio", quality: first.format as AudioFormat });
     }
   }
 
@@ -27,7 +30,6 @@ export function FormatSelector({ analysis, selected, onChange }: FormatSelectorP
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Type tabs */}
       <div role="group" aria-label="Tipo de descarga" className="flex gap-2">
         <TypeTab
           id="type-video"
@@ -45,35 +47,34 @@ export function FormatSelector({ analysis, selected, onChange }: FormatSelectorP
         />
       </div>
 
-      {/* Quality options */}
       <fieldset className="flex flex-col gap-2">
         <legend className="font-arcade text-[9px] uppercase tracking-widest text-text-muted mb-2">
           {activeType === "video" ? "Calidad de video (MP4)" : "Formato de audio"}
         </legend>
 
         {activeType === "video" &&
-          analysis.availableVideoQualities.map((q) => (
+          analysis.videoOptions.map((opt) => (
             <QualityOption
-              key={q}
-              id={`quality-${q}`}
+              key={opt.quality}
+              id={`quality-${opt.quality}`}
               name="quality"
-              label={VIDEO_QUALITY_LABELS[q] ?? q}
-              sublabel={analysis.estimatedSizes[q]}
-              checked={selected?.type === "video" && selected.quality === q}
-              onChange={() => selectQuality(q)}
+              label={VIDEO_QUALITY_LABELS[opt.quality] ?? opt.quality}
+              sublabel={formatBytes(opt.estimatedSizeBytes)}
+              checked={selected?.type === "video" && selected.quality === opt.quality}
+              onChange={() => selectQuality(opt.quality)}
             />
           ))}
 
         {activeType === "audio" &&
-          analysis.availableAudioFormats.map((f) => (
+          analysis.audioOptions.map((opt) => (
             <QualityOption
-              key={f}
-              id={`format-${f}`}
+              key={opt.format}
+              id={`format-${opt.format}`}
               name="quality"
-              label={AUDIO_FORMAT_LABELS[f] ?? f}
-              sublabel={analysis.estimatedSizes[f]}
-              checked={selected?.type === "audio" && selected.quality === f}
-              onChange={() => selectQuality(f)}
+              label={AUDIO_FORMAT_LABELS[opt.format] ?? opt.format}
+              sublabel={formatBytes(opt.estimatedSizeBytes)}
+              checked={selected?.type === "audio" && selected.quality === opt.format}
+              onChange={() => selectQuality(opt.format as AudioFormat)}
             />
           ))}
       </fieldset>

@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
 import type { MediaAnalysis } from "../types";
 import { formatSeconds } from "../validateUrl";
 import { VideoIcon, AudioIcon } from "@/components/icons";
@@ -13,7 +17,7 @@ export function MediaAnalysisResult({ analysis }: MediaAnalysisResultProps) {
       style={{ borderRadius: 0 }}
       aria-label="Resultado del análisis"
     >
-      <ThumbnailPlaceholder />
+      <Thumbnail url={analysis.thumbnailUrl} title={analysis.title} />
 
       <div className="flex flex-col gap-1 min-w-0">
         <p className="font-arcade text-[10px] uppercase tracking-widest text-arcade-cyan line-clamp-2">
@@ -25,23 +29,40 @@ export function MediaAnalysisResult({ analysis }: MediaAnalysisResultProps) {
         <div className="flex items-center gap-3 mt-1">
           <span className="flex items-center gap-1 font-mono text-[11px] text-text-muted">
             <VideoIcon aria-hidden="true" className="w-3 h-3" />
-            {analysis.availableVideoQualities.length} calidades
+            {analysis.videoOptions.length} calidades
           </span>
           <span className="flex items-center gap-1 font-mono text-[11px] text-text-muted">
             <AudioIcon aria-hidden="true" className="w-3 h-3" />
-            {analysis.availableAudioFormats.length} formatos
+            {analysis.audioOptions.length} formatos
           </span>
         </div>
-        <span
-          className="mt-1 inline-block px-2 py-0 font-arcade text-[8px] uppercase border border-arcade-yellow text-arcade-yellow"
-          style={{
-            borderRadius: 0,
-            backgroundColor: "color-mix(in srgb, var(--color-arcade-yellow) 8%, transparent)",
-          }}
-        >
-          DATOS SIMULADOS
-        </span>
       </div>
+    </div>
+  );
+}
+
+function Thumbnail({ url, title }: { url: string | null; title: string }) {
+  const [failed, setFailed] = useState(false);
+
+  const isYtimg = Boolean(url && url.startsWith("https://i.ytimg.com"));
+
+  if (!url || failed || !isYtimg) {
+    return <ThumbnailPlaceholder />;
+  }
+
+  return (
+    <div
+      className="shrink-0 w-16 h-9 md:w-[120px] md:h-[68px] border-2 border-panel-border relative overflow-hidden"
+      style={{ borderRadius: 0 }}
+    >
+      <Image
+        src={url}
+        alt={`Miniatura de ${title}`}
+        fill
+        sizes="(max-width: 768px) 64px, 120px"
+        className="object-cover"
+        onError={() => setFailed(true)}
+      />
     </div>
   );
 }
