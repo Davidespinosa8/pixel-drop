@@ -10,41 +10,31 @@
 
 ---
 
-## Datos persistentes — Firestore
+## Datos de identidad — Firebase Auth Custom Claims
 
-### Colección `users`
+No hay base de datos en el MVP. La identidad del usuario vive exclusivamente en Firebase Authentication.
 
-Documento: `users/{uid}`
+### Custom claims por usuario
 
-| Campo | Tipo | Descripción |
+| Claim | Tipo | Descripción |
 |---|---|---|
-| `email` | `string` | Correo del usuario. Solo lectura después del registro. |
-| `createdAt` | `Timestamp` | Fecha de creación del documento. |
-| `lastLoginAt` | `Timestamp` | Última vez que el usuario inició sesión exitosamente. |
-| `status` | `"active" \| "inactive"` | Controla el acceso. El backend rechaza tokens de usuarios `inactive`. |
-| `role` | `"owner" \| "family"` | Define el nivel de privilegio. El MVP no diferencia permisos por rol; está preparado para el futuro. |
+| `role` | `"owner" \| "family"` | Rol del usuario. Incluido en el ID token y en la session cookie. |
 
-**No hay otras colecciones.** No se persisten trabajos, URLs, archivos ni historial.
+**No hay Firestore.** No se persisten trabajos, URLs, archivos, historial, fechas de acceso ni preferencias.
 
 ### Inicialización del primer usuario owner
 
-El documento del primer usuario `owner` se crea mediante el script `backend/scripts/init_owner.py` ejecutado una única vez. El script es idempotente y no contiene credenciales. Ver `ARCHITECTURE.md` sección 3 para los detalles.
+El claim `role: "owner"` se asigna mediante el script `frontend/scripts/bootstrap-owner.mjs` ejecutado una única vez. El script es idempotente y no contiene credenciales. Ver `ARCHITECTURE.md` sección 3 para los detalles.
 
-### Reglas de seguridad de Firestore
+### Fuente de verdad
 
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{uid} {
-      allow read: if false;   // El frontend no lee Firestore directamente
-      allow write: if false;  // Solo el Admin SDK puede escribir
-    }
-  }
-}
-```
-
-El frontend no consulta Firestore directamente. Toda la lógica de usuario pasa por el backend.
+| Dato | Dónde vive |
+|---|---|
+| Identidad (email, uid) | Firebase Authentication |
+| Rol | Custom claim en Firebase Auth |
+| Estado del usuario | Firebase Auth (campo `disabled`) |
+| Estado de trabajos | Memoria del proceso FastAPI |
+| Archivos temporales | Sistema de archivos local (`tmp/`) |
 
 ---
 
@@ -192,9 +182,9 @@ El servidor emite también comentarios de heartbeat (`": heartbeat"`) cada 15 se
 
 | Secreto | Dónde vive |
 |---|---|
-| Firebase service account JSON | Variable de entorno / archivo excluido de git |
-| Hash del código familiar | Variable de entorno `FAMILY_CODE_HASH` del backend |
-| Cookies de YouTube | Archivo en el servidor, path en `YTDLP_COOKIES_FILE` |
-| Firebase API keys del cliente | Variables `NEXT_PUBLIC_*` en `.env.local` (no se commitean) |
+| Firebase Admin credentials | Variables de entorno del frontend (server-only) |
+| SHA-256 del código familiar | Variable de entorno `FAMILY_ACCESS_CODE_SHA256` del frontend |
+| Cookies de YouTube | Archivo en el servidor, path en `YTDLP_COOKIES_FILE` del backend |
+| Firebase API keys del cliente | Variables `NEXT_PUBLIC_*` en `frontend/.env.local` (no se commitean) |
 
 El archivo `.gitignore` debe excluir: `backend/secrets/`, `tmp/`, `.env`, `.env.local`, `*_cookies.txt`, `*serviceAccount*.json`.
