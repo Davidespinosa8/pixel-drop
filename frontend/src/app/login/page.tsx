@@ -1,11 +1,18 @@
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
 import { StarField } from "@/components/StarField";
-import { LoginDemoForm } from "@/features/auth/components/LoginDemoForm";
+import { LoginForm } from "@/features/auth/components/LoginForm";
 
 export const metadata = {
   title: "Acceso — Pixel Drop",
 };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const session = await getSession();
+  if (session.ok) {
+    redirect("/");
+  }
+
   return (
     <>
       <StarField />
@@ -25,7 +32,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <LoginDemoForm />
+          <LoginForm />
         </div>
       </div>
     </>

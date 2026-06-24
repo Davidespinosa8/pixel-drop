@@ -24,8 +24,8 @@
    ┌────────────┐  ┌──────────────┐  ┌────────────────┐
    │  Firebase   │  │  yt-dlp      │  │  Sistema de    │
    │  Auth Admin │  │  FFmpeg      │  │  archivos local│
-   │  Firestore  │  │  (proceso    │  │  (tmp/ por job)│
-   │  (mínimo)   │  │  interno)    │  │                │
+   │  (solo Auth)│  │  (proceso    │  │  (tmp/ por job)│
+   │             │  │  interno)    │  │                │
    └────────────┘  └──────────────┘  └────────────────┘
 ```
 
@@ -219,8 +219,8 @@ Sirve el archivo con `Content-Disposition: attachment`. El archivo se elimina tr
 
 1. El middleware lee la cabecera `Authorization: Bearer <token>`.
 2. Verifica el token con Firebase Admin SDK (`auth.verify_id_token()`).
-3. Extrae el `uid` del token.
-4. Consulta Firestore para verificar que el usuario existe y tiene `status: active`.
+3. Extrae el `uid` y los custom claims (`role`) del token.
+4. Rechaza el token si el usuario está deshabilitado en Firebase Auth.
 5. Inyecta el usuario verificado en el contexto del request.
 6. Si falla: responde `401`.
 
@@ -228,8 +228,8 @@ Sirve el archivo con `Content-Disposition: attachment`. El archivo se elimina tr
 # auth.py (pseudocódigo)
 async def get_current_user(token: str = Depends(bearer_scheme)):
     decoded = firebase_admin.auth.verify_id_token(token)
-    user_doc = firestore_client.collection("users").document(decoded["uid"]).get()
-    if not user_doc.exists or user_doc.get("status") != "active":
+    # No se consulta Firestore; el rol viene en los custom claims
+    if decoded.get("role") not in ("owner", "family"):
         raise HTTPException(401)
     return decoded
 ```
@@ -377,44 +377,43 @@ ALLOWED_ORIGINS                  # CORS origins (default: localhost:3000)
 
 ### Authentication
 
-- Firebase Auth gestiona las sesiones del cliente.
-- El backend solo consume el Admin SDK para **verificar tokens**. No crea usuarios directamente desde el cliente.
-- El flujo de login usa un custom token generado por el backend tras validar el código familiar.
+- Firebase Auth es la única fuente de identidad. No se usa Firestore en el MVP.
+- El rol se almacena como custom claim: `role: "owner" | "family"`.
+- El flujo de login usa un custom token generado por el Route Handler de Next.js tras validar el código familiar.
+- El backend FastAPI verifica el ID token con Firebase Admin SDK y lee el rol desde los claims.
 
 ### Código familiar
 
-- El código familiar se hashea con bcrypt en el momento de la configuración inicial.
-- El hash se almacena en la variable de entorno `FAMILY_CODE_HASH`, no en Firestore.
-- Nunca se almacena el código en texto plano.
-- La comparación es: `bcrypt.checkpw(input_code, stored_hash)`.
+- El código familiar se hashea con SHA-256 en el momento de la configuración inicial.
+- El hash se almacena en la variable de entorno `FAMILY_ACCESS_CODE_SHA256` del frontend (Next.js Route Handler).
+- Nunca se almacena el código en texto plano ni en el repositorio.
+- La comparación usa `timingSafeEqual` para resistir timing attacks.
 
-### Firestore
+### Roles
 
-Solo se lee/escribe en `users/{uid}`:
-
-```
-users/{uid}
-  email: string
-  createdAt: Timestamp
-  lastLoginAt: Timestamp
-  status: "active" | "inactive"
-  role: "owner" | "family"
-```
-
-No se almacena historial, URLs, archivos ni cookies.
+| Valor | Descripción |
+|---|---|
+| `owner` | Propietario de la aplicación. Se asigna mediante el script `bootstrap-owner`. Nunca se asigna automáticamente. |
+| `family` | Familiar autorizado. Se asigna al primer login exitoso si el usuario no tiene ya el claim `owner`. |
 
 ### Primer usuario owner
 
-El primer usuario propietario se crea mediante el script `backend/scripts/init_owner.py`, ejecutado una sola vez antes del primer uso de la aplicación. El script:
+El primer usuario propietario se configura mediante el script `frontend/scripts/bootstrap-owner.mjs`, ejecutado una sola vez antes del primer uso de la aplicación. El script:
 
-1. Recibe el correo del propietario desde una variable de entorno o argumento seguro (nunca hardcodeado).
+1. Lee `OWNER_EMAIL` desde `.env.local`.
 2. Crea o localiza el usuario en Firebase Authentication.
-3. Crea o actualiza `users/{uid}` en Firestore.
-4. Asigna `role: "owner"`, `status: "active"`, `createdAt`, `lastLoginAt`.
-5. Es idempotente: puede ejecutarse más de una vez sin efectos secundarios.
-6. No contiene contraseñas, códigos ni credenciales dentro del repositorio.
+3. Verifica que no esté deshabilitado.
+4. Asigna `role: "owner"` como custom claim.
+5. Es idempotente.
+6. No contiene correos ni credenciales hardcodeadas.
 
-El script no se implementa durante la documentación. Se implementa en la Fase 1 del plan.
+```bash
+npm run bootstrap:owner
+```
+
+### Sin Firestore en el MVP
+
+No se usa Cloud Firestore. Podrá incorporarse en el futuro si aparecen datos persistentes reales (historial, preferencias, etc.).
 
 ---
 

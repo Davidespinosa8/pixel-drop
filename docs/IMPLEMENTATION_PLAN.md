@@ -81,23 +81,35 @@ python -m py_compile main.py config.py
 
 ---
 
-## Fase 1 — Autenticación completa
+## Fase 1 — Autenticación completa (sin Firestore)
 
-**Objetivo:** Implementar el flujo de login con correo + código familiar + Firebase Auth. El usuario puede iniciar y cerrar sesión. Rutas protegidas redirigen a `/login` si no hay sesión.
+**Objetivo:** Implementar el flujo de login con correo + código familiar + Firebase Auth + session cookie HTTP-only. El usuario puede iniciar y cerrar sesión. Rutas protegidas redirigen a `/login` si no hay sesión. No se usa Firestore.
 
 ### Prerequisito: inicialización del primer usuario owner
 
-Antes de ejecutar esta fase, debe existir al menos un usuario `owner` en Firestore. Se crea con el script `backend/scripts/init_owner.py` (a implementar en esta misma fase). El script requiere:
-- La variable de entorno `FIREBASE_SERVICE_ACCOUNT_PATH` configurada.
-- El correo del propietario como argumento o variable de entorno.
-- No contiene contraseñas ni códigos en el código fuente.
+El claim `role: "owner"` se asigna al propietario con el script `frontend/scripts/bootstrap-owner.mjs`. No requiere Firestore. El script requiere:
+- Las variables de entorno Firebase Admin en `frontend/.env.local`.
+- `OWNER_EMAIL` con el correo del propietario.
+- No contiene correos ni credenciales en el código fuente.
+
+```bash
+cd frontend && npm run bootstrap:owner
+```
 
 ### Archivos esperados
 
 ```
 frontend/
-  app/
-    login/page.tsx
+  .env.example
+  scripts/
+    bootstrap-owner.mjs
+  src/
+    lib/
+      firebase-client.ts
+      firebase-admin.ts
+      session.ts
+    app/
+      login/page.tsx
     (protected)/layout.tsx     ← Guard de autenticación
     (protected)/page.tsx       ← Panel vacío con logout
   lib/

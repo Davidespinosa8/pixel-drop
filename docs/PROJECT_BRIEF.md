@@ -149,9 +149,8 @@ Los mensajes temáticos siempre deben estar acompañados de una explicación cla
 * TypeScript estricto.
 * Tailwind CSS.
 * Zod.
-* React Hook Form.
 * Firebase Authentication.
-* Firestore mínimo.
+* Custom claims para roles (sin Firestore en el MVP).
 * Deploy futuro en Vercel.
 
 ### Backend
@@ -164,23 +163,15 @@ Los mensajes temáticos siempre deben estar acompañados de una explicación cla
 * Server-Sent Events para progreso.
 * Docker en una fase posterior.
 
-## Datos persistentes
+## Datos de identidad
 
-Firestore solo debe almacenar:
+El rol del usuario se almacena como custom claim en Firebase Authentication:
 
 ```text
-users/{uid}
-- email
-- createdAt
-- lastLoginAt
-- status
-- role
+role: "owner" | "family"
 ```
 
-Roles:
-
-* owner
-* family
+No hay base de datos en el MVP. Firestore podrá incorporarse en el futuro únicamente si aparecen datos persistentes reales.
 
 No almacenar:
 
