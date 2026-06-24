@@ -36,6 +36,13 @@ export function validateUrl(value: string): UrlValidationResult {
   return { ok: true, url };
 }
 
+export function formatBytes(bytes: number | null | undefined): string | undefined {
+  if (!bytes) return undefined;
+  if (bytes >= 1_073_741_824) return `~${(bytes / 1_073_741_824).toFixed(1)} GB`;
+  if (bytes >= 1_048_576) return `~${Math.round(bytes / 1_048_576)} MB`;
+  return `~${Math.round(bytes / 1024)} KB`;
+}
+
 export function formatSeconds(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);

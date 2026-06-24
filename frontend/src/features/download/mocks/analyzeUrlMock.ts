@@ -1,6 +1,6 @@
 import type { MediaAnalysis } from "../types";
 
-// Añade ?simulate=error a cualquier URL válida para disparar un error simulado de análisis.
+// Solo para pruebas. Añade ?simulate=error a cualquier URL válida para disparar un error simulado.
 export async function analyzeUrlMock(url: string): Promise<MediaAnalysis> {
   const parsed = new URL(url);
 
@@ -12,20 +12,20 @@ export async function analyzeUrlMock(url: string): Promise<MediaAnalysis> {
   await delay(900);
 
   return {
-    url,
     title: "Transmisión localizada",
     channel: "Canal autorizado",
     durationSeconds: 542,
-    availableVideoQualities: ["best", "1080p", "720p", "480p"],
-    availableAudioFormats: ["mp3", "m4a"],
-    estimatedSizes: {
-      best: "~890 MB [SIMULADO]",
-      "1080p": "~760 MB [SIMULADO]",
-      "720p": "~420 MB [SIMULADO]",
-      "480p": "~220 MB [SIMULADO]",
-      mp3: "~50 MB [SIMULADO]",
-      m4a: "~55 MB [SIMULADO]",
-    },
+    thumbnailUrl: null,
+    videoOptions: [
+      { quality: "best", height: null, estimatedSizeBytes: 933_642_240 },
+      { quality: "1080p", height: 1080, estimatedSizeBytes: 797_376_512 },
+      { quality: "720p", height: 720, estimatedSizeBytes: 440_401_920 },
+      { quality: "480p", height: 480, estimatedSizeBytes: 230_686_720 },
+    ],
+    audioOptions: [
+      { format: "m4a", estimatedSizeBytes: 57_671_680 },
+      { format: "mp3", estimatedSizeBytes: 52_428_800 },
+    ],
   };
 }
 

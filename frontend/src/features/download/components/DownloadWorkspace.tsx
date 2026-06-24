@@ -11,7 +11,8 @@ import { MissionProgress } from "./MissionProgress";
 import { MissionCompleted } from "./MissionCompleted";
 import { MissionError, MissionCancelled } from "./MissionError";
 import { CancelConfirmModal } from "./CancelConfirmModal";
-import { analyzeUrlMock } from "../mocks/analyzeUrlMock";
+import { analyzeUrl, ApiError } from "@/lib/apiClient";
+import { formatBytes } from "../validateUrl";
 import type { UIState, SelectedFormat, SimulatedFileInfo, DownloadStage, MediaAnalysis } from "../types";
 
 const PROGRESS_INTERVAL_MS = 300;
@@ -57,7 +58,7 @@ export function DownloadWorkspace() {
         phase: "completed",
         analysis,
         selectedFormat,
-        fileInfo: buildFileInfo(analysis.title, selectedFormat),
+        fileInfo: buildFileInfo(analysis.title, selectedFormat, analysis),
       });
     }, PROCESSING_DURATION_MS);
   }
@@ -65,17 +66,24 @@ export function DownloadWorkspace() {
   async function handleScan(url: string) {
     setState({ phase: "scanning", url });
     try {
-      const analysis = await analyzeUrlMock(url);
+      const analysis = await analyzeUrl(url);
       if (!mountedRef.current) return;
-      setState({ phase: "ready", analysis, selectedFormat: null });
-    } catch {
+      setState({ phase: "ready", url, analysis, selectedFormat: null });
+    } catch (err) {
       if (!mountedRef.current) return;
-      setState({
-        phase: "error",
-        errorCode: "ANALYSIS_FAILED",
-        message:
-          "No se pudieron obtener los metadatos del video. Verifica la URL e intenta de nuevo.",
-      });
+      if (err instanceof ApiError) {
+        setState({
+          phase: "error",
+          errorCode: err.code,
+          message: err.userMessage,
+        });
+      } else {
+        setState({
+          phase: "error",
+          errorCode: "ANALYSIS_FAILED",
+          message: "No se pudieron obtener los metadatos del video. Verifica la URL e intenta de nuevo.",
+        });
+      }
     }
   }
 
@@ -150,7 +158,7 @@ export function DownloadWorkspace() {
     phase === "scanning"
       ? state.url
       : phase === "ready"
-        ? state.analysis.url
+        ? state.url
         : undefined;
 
   return (
@@ -247,7 +255,11 @@ export function DownloadWorkspace() {
   );
 }
 
-function buildFileInfo(title: string, format: SelectedFormat): SimulatedFileInfo {
+function buildFileInfo(
+  title: string,
+  format: SelectedFormat,
+  analysis: MediaAnalysis,
+): SimulatedFileInfo {
   const slug = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -255,17 +267,15 @@ function buildFileInfo(title: string, format: SelectedFormat): SimulatedFileInfo
     .slice(0, 40);
   const ext = format.type === "audio" ? (format.quality as string) : "mp4";
   const fmt = format.type === "audio" ? (format.quality as string).toUpperCase() : "MP4";
-  const sizeMap: Record<string, string> = {
-    best: "~890 MB [SIMULADO]",
-    "1080p": "~760 MB [SIMULADO]",
-    "720p": "~420 MB [SIMULADO]",
-    "480p": "~220 MB [SIMULADO]",
-    mp3: "~50 MB [SIMULADO]",
-    m4a: "~55 MB [SIMULADO]",
-  };
-  return {
-    filename: `${slug}.${ext}`,
-    format: fmt,
-    size: sizeMap[format.quality as string] ?? "~??? MB [SIMULADO]",
-  };
+
+  let size = "Tamaño desconocido";
+  if (format.type === "video") {
+    const opt = analysis.videoOptions.find((v) => v.quality === format.quality);
+    size = formatBytes(opt?.estimatedSizeBytes) ?? "Tamaño desconocido";
+  } else {
+    const opt = analysis.audioOptions.find((a) => a.format === format.quality);
+    size = formatBytes(opt?.estimatedSizeBytes) ?? "Tamaño desconocido";
+  }
+
+  return { filename: `${slug}.${ext}`, format: fmt, size };
 }
